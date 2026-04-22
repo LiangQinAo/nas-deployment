@@ -1,0 +1,10 @@
+serverAddr = "8.134.251.152"
+serverPort = 7000
+auth.token = "nas2_frp_2026"
+
+[[proxies]]
+name = "filebrowser"
+type = "tcp"
+localIP = "127.0.0.1"
+localPort = 8888
+remotePort = 18888

@@ -1,0 +1,52 @@
+services:
+  filebrowser:
+    image: filebrowser-custom:latest
+    container_name: filebrowser
+    restart: unless-stopped
+
+    # ---- 端口映射 -----------------------------------------------
+    # 仅绑定 127.0.0.1，通过 Tailscale 对外暴露，不直接暴露到公网
+    ports:
+      - "127.0.0.1:${PORT:-8080}:80"
+
+    # ---- 卷挂载 -------------------------------------------------
+    volumes:
+      # filebrowser 配置文件（持久化）
+      - ./config:/config
+
+      # BoltDB 数据库（用户、权限、设置均存储在此）
+      - ./database:/database
+
+      # 缓存目录（RAW 预览缓存）
+      - ./cache:/cache
+
+      # ---- 媒体文件挂载 ----------------------------------------
+      # 主硬盘：挂载到 /srv/disk1
+      # 注意：ExFAT 格式硬盘需要在 OrbStack 中开启"全盘访问"权限
+      # 步骤：macOS 系统设置 → 隐私与安全 → 完整磁盘访问 → 添加 OrbStack
+      - ${DISK1_PATH:-/tmp/filebrowser-fallback}:/srv/disk1:rw
+
+      # 本地目录（可选：挂载 macOS 本地图片/视频文件夹）
+      # - ~/Pictures:/srv/Pictures:rw
+      # - ~/Movies:/srv/Movies:rw
+      
+    environment:
+      - RAW_CONVERTER_URL=http://host.docker.internal:9234
+
+      # 第二块硬盘（可选）
+      # - ${DISK2_PATH}:/srv/disk2:rw
+
+    # ---- 健康检查 -----------------------------------------------
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:80/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+    # ---- 日志配置 -----------------------------------------------
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
