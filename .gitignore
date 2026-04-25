@@ -25,3 +25,4 @@ filebrowser-dev/
 .idea/
 *.swp
 *.swo
+cache/
